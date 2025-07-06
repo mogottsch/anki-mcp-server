@@ -7,6 +7,7 @@ from anki_mcp_server.notes.models import (
     NoteCreated,
     NoteUpdated,
     ErrorResponse,
+    NoteList,
 )
 
 
@@ -37,11 +38,12 @@ async def get_note(note_id: int) -> NoteInfo | ErrorResponse:
         if not notes:
             return ErrorResponse(error="Note not found", operation="get_note")
         note = notes[0]
+        fields = {k: v["value"] for k, v in note["fields"].items()}
         return NoteInfo(
             note_id=note["noteId"],
-            fields=note["fields"],
+            fields=fields,
             tags=note["tags"],
-            card_ids=note["cardIds"],
+            card_ids=note["cards"],
         )
     except Exception as e:
         return ErrorResponse(error=str(e), operation="get_note")
@@ -63,7 +65,31 @@ async def update_note(
         return ErrorResponse(error=str(e), operation="update_note")
 
 
+async def list_notes_in_deck(deck_name: str) -> NoteList | ErrorResponse:
+    try:
+        note_ids = await make_anki_request(
+            "findNotes", {"query": f'deck:"{deck_name}"'}
+        )
+        if not note_ids:
+            return NoteList(notes=[])
+        notes = await make_anki_request("notesInfo", {"notes": note_ids})
+        note_infos = [
+            NoteInfo(
+                note_id=note["noteId"],
+                fields={k: v["value"] for k, v in note["fields"].items()},
+                tags=note["tags"],
+                card_ids=note["cards"],
+            )
+            for note in notes
+        ]
+        return NoteList(notes=note_infos)
+    except Exception as e:
+        print(e)
+        return ErrorResponse(error=str(e), operation="list_notes_in_deck")
+
+
 def register_notes_tools(mcp: FastMCP):
     mcp.tool(add_note)
     mcp.tool(get_note)
     mcp.tool(update_note)
+    mcp.tool(list_notes_in_deck)

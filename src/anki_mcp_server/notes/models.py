@@ -6,6 +6,9 @@ class NoteInfo(BaseModel):
     tags: list[str]
     card_ids: list[int]
 
+class NoteList(BaseModel):
+    notes: list[NoteInfo]
+
 class NoteCreated(BaseModel):
     note_id: int
 
