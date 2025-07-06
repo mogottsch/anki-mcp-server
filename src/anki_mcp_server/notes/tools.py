@@ -88,8 +88,17 @@ async def list_notes_in_deck(deck_name: str) -> NoteList | ErrorResponse:
         return ErrorResponse(error=str(e), operation="list_notes_in_deck")
 
 
+async def add_deck(deck_name: str) -> dict[str, str]:
+    try:
+        await make_anki_request("createDeck", {"deck": deck_name})
+        return {"status": "success", "deck_name": deck_name}
+    except Exception as e:
+        return {"status": "error", "error": str(e), "operation": "add_deck"}
+
+
 def register_notes_tools(mcp: FastMCP):
     mcp.tool(add_note)
     mcp.tool(get_note)
     mcp.tool(update_note)
     mcp.tool(list_notes_in_deck)
+    mcp.tool(add_deck)
