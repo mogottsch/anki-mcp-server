@@ -16,6 +16,10 @@ cd anki-mcp-server
 uv sync
 ```
 
+### Configuration
+
+Copy `.env.example` to `.env` and adjust values as needed to configure the server environment.
+
 ### Start the Server
 
 ```bash
@@ -24,9 +28,6 @@ uv run anki-mcp-server
 
 The server will start on `http://127.0.0.1:8000/mcp` by default.
 
-## Configuration
-
-Copy `.env.example` to `.env` and adjust values as needed to configure the server environment.
 
 ## Development
 
