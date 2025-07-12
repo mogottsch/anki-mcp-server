@@ -6,7 +6,7 @@ from anki_mcp_server.settings import get_settings
 
 def main():
     settings = get_settings()
-    mcp.run(transport=settings.mcp_transport, port=settings.mcp_port)
+    mcp.run(transport=settings.mcp_transport, port=settings.mcp_port, host="*")
 
 
 if __name__ == "__main__":
