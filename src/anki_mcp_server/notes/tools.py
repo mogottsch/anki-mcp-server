@@ -1,13 +1,16 @@
 from typing import Any
 
 from fastmcp import FastMCP
+
 from anki_mcp_server.anki_connect import make_anki_request
 from anki_mcp_server.notes.models import (
-    NoteInfo,
-    NoteCreated,
-    NoteUpdated,
     ErrorResponse,
+    NoteCreated,
+    NoteDeleted,
+    NoteInfo,
     NoteList,
+    NoteMoved,
+    NoteUpdated,
 )
 
 
@@ -19,7 +22,7 @@ async def add_note(
 ) -> NoteCreated | ErrorResponse:
     """Add a new note to Anki."""
     try:
-        note = {
+        note: dict[str, Any] = {
             "deckName": deck_name,
             "modelName": model_name,
             "fields": fields,
@@ -88,6 +91,42 @@ async def list_notes_in_deck(deck_name: str) -> NoteList | ErrorResponse:
         return ErrorResponse(error=str(e), operation="list_notes_in_deck")
 
 
+async def move_note_to_deck(note_id: int, deck_name: str) -> NoteMoved | ErrorResponse:
+    """Move a note's cards into the specified deck.
+
+    Notes in Anki are associated with one or more cards; decks are assigned per-card.
+    This tool moves all cards for the note into the target deck.
+    """
+    try:
+        # Ensure the deck exists (safe even if it already exists).
+        await make_anki_request("createDeck", {"deck": deck_name})
+
+        notes = await make_anki_request("notesInfo", {"notes": [note_id]})
+        if not notes:
+            return ErrorResponse(error="Note not found", operation="move_note_to_deck")
+
+        note = notes[0]
+        card_ids: list[int] = note.get("cards", [])
+
+        if card_ids:
+            await make_anki_request(
+                "changeDeck", {"cards": card_ids, "deck": deck_name}
+            )
+
+        return NoteMoved(note_id=note_id, deck_name=deck_name, card_ids=card_ids)
+    except Exception as e:
+        return ErrorResponse(error=str(e), operation="move_note_to_deck")
+
+
+async def delete_note(note_id: int) -> NoteDeleted | ErrorResponse:
+    """Delete a note by note_id."""
+    try:
+        await make_anki_request("deleteNotes", {"notes": [note_id]})
+        return NoteDeleted(note_id=note_id)
+    except Exception as e:
+        return ErrorResponse(error=str(e), operation="delete_note")
+
+
 async def add_deck(deck_name: str) -> dict[str, str]:
     try:
         await make_anki_request("createDeck", {"deck": deck_name})
@@ -96,9 +135,11 @@ async def add_deck(deck_name: str) -> dict[str, str]:
         return {"status": "error", "error": str(e), "operation": "add_deck"}
 
 
-def register_notes_tools(mcp: FastMCP):
+def register_notes_tools(mcp: FastMCP[Any]):
     mcp.tool(add_note)
     mcp.tool(get_note)
     mcp.tool(update_note)
     mcp.tool(list_notes_in_deck)
+    mcp.tool(move_note_to_deck)
+    mcp.tool(delete_note)
     mcp.tool(add_deck)

@@ -26,7 +26,17 @@ Copy `.env.example` to `.env` and adjust values as needed to configure the serve
 uv run anki-mcp-server
 ```
 
-The server will start on `http://127.0.0.1:8000/mcp` by default.
+The server will start on `http://127.0.0.1:8629/mcp` by default.
+
+#### Windows + WSL
+
+If you run the server in WSL and want a Windows process (e.g. VS Code on Windows) to reach it, bind to all interfaces:
+
+```bash
+MCP_HOST=0.0.0.0 uv run anki-mcp-server
+```
+
+Then use `http://localhost:8629/mcp` from Windows (or the WSL VM IP if localhost forwarding is unavailable).
 
 
 ## Development
@@ -34,7 +44,7 @@ The server will start on `http://127.0.0.1:8000/mcp` by default.
 For development with hot reload using Uvicorn:
 
 ```bash
-uv run uvicorn src.anki_mcp_server.server:mcp --reload --host 127.0.0.1 --port 8000
+uv run uvicorn anki_mcp_server.server:http_app --reload --host 127.0.0.1 --port 8629
 ```
 
 ---
